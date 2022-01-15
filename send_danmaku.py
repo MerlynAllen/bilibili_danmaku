@@ -23,6 +23,7 @@ header = {
 
 from cookie import cookie
 token = cookie["bili_jct"]
+#他妈的，aiohttp的cookie问题好大，只能手动设置cookie
 cookie_str = "".join([f"{k}={v};" for k, v in cookie.items()])
 msg = "开门！！"
 data = {
