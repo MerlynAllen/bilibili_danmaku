@@ -34,14 +34,22 @@ class Danmaku():
                 log.debug(f"Get real roomid {real_roomid}")
                 return real_roomid
 
-    async def get_info(self, room_id):
+    async def get_danmakuinfo(self, room_id):
         api = "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo"
         async with aiohttp.ClientSession() as session:
             async with session.get(api, params={"id": str(room_id), "type": "0"}) as resp:
                 log.debug(
-                    f"Room {room_id}\nStatus {resp.status}\nInfo\n----\n{await resp.text()}")
+                    f"Room {room_id}\nDanmakuStatus {resp.status}\nInfo\n----\n{await resp.text()}")
                 return await resp.json()
 
+    async def get_roominfo(self, roomid):
+        api = "https://api.live.bilibili.com/xlive/web-room/v1/index/getRoomBaseInfo"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api, params={"room_ids": str(roomid), "req_biz": "web_room_componet"}) as resp:
+                log.debug(
+                    f"Room {roomid}\nRoomStatus {resp.status}\nInfo\n----\n{await resp.text()}")
+                return await resp.json()
+                
     def server_selection(self):
         raise NotImplementedError
 
@@ -74,11 +82,13 @@ class Danmaku():
             if cur_ptr >= len(msg_raw):
                 break
         return messages
+
     def get_message(self):
         if len(self.MSG_BUFFER) > 0:
             return self.MSG_BUFFER.pop(0)
         else:
             return None
+
     async def loop(self, ws):
         while True:
             data = await ws.receive()
@@ -132,11 +142,11 @@ class Danmaku():
             )
             log.debug("Sent heartbeat")
             await asyncio.sleep(30)
-    # def connect(self):
-    #     asyncio.run(self._connect())
+
     async def connect(self, server_autoselect=True):
         self.real_roomid = await self.get_real_roomid(self.roomid)
-        self.server_info = await self.get_info(self.real_roomid)
+        self.server_info = await self.get_danmakuinfo(self.real_roomid)
+        self.room_info = (await self.get_roominfo(self.real_roomid))["data"]["by_room_ids"][str(self.real_roomid)]
         self.token = self.server_info['data']['token']
         self.server_list = self.server_info['data']['host_list']
         if server_autoselect:
@@ -159,9 +169,10 @@ class Danmaku():
             "Cache-Control": "no-cache",
             "Upgrade": "websocket"
         }
-        log.info(f"Entering room {self.real_roomid}")
+        log.info(f"Entering room {self.room_info['title']}\nUser {self.room_info['uname']}\nDescription {self.room_info['description']}\nRoomID {self.roomid}\nReal RoomID {self.real_roomid}")
         async with aiohttp.ClientSession() as self.session:
-            log.debug(f"Initialized Danmaku object for room {self.real_roomid}")
+            log.debug(
+                f"Initialized Danmaku object for room {self.real_roomid}")
             log.debug(
                 f"Connecting to server {self.server['host']}:{self.server['wss_port']}")
             async with self.session.ws_connect(f"wss://{self.server['host']}:{self.server['wss_port']}/sub", headers=self.header, timeout=0) as ws:

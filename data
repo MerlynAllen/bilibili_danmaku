@@ -1,0 +1,11 @@
+
+\nContent-Disposition: form-data; name="bubble"\n\n0\n
+\nContent-Disposition: form-data; name="msg"\n\ncao\n
+\nContent-Disposition: form-data; name="color"\n\n16777215\n
+\nContent-Disposition: form-data; name="mode"\n\n1\n
+\nContent-Disposition: form-data; name="fontsize"\n\n25\n
+\nContent-Disposition: form-data; name="rnd"\n\n1642217079\n
+\nContent-Disposition: form-data; name="roomid"\n\n3645373\n
+\nContent-Disposition: form-data; name="csrf"\n\n18b4d9fabe83428c732b41f0af1eac22\n
+\nContent-Disposition: form-data; name="csrf_token"\n\n18b4d9fabe83428c732b41f0af1eac22\n
+--\n

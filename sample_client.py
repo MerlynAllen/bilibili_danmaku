@@ -3,9 +3,10 @@ import danmaku
 import asyncio
 import aiohttp
 import logging as log
+import os
 
 
-LOGLEVEL = log.INFO
+LOGLEVEL = log.DEBUG
 log.basicConfig(
     level=LOGLEVEL, format="[%(asctime)s (%(levelname)s) line %(lineno)d in %(funcName)s]\n%(message)s\n----")
 client = None
@@ -14,7 +15,8 @@ async def loop():
     while True:
         msg = client.get_message()
         if msg != None:
-            print("[{username}]: {content}".format(**msg))
+            print("[\x1b[34m{username}\x1b[39m]: {content}".format(**msg))
+            os.system(f"notify-send '[{msg['username']}]说:' '{msg['content']}' --app-name='Bilibili Danmaku Room {roomid}' -t 3000")
         await asyncio.sleep(0)
 async def main():
     lp = asyncio.create_task(loop())
