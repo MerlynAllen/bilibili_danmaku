@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 import json
 import requests
+import re
 
 api = "https://api.live.bilibili.com/msg/send"
 header = {
@@ -21,30 +22,41 @@ header = {
     "Cache-Control": "no-cache",
 }
 
-from cookie import cookie
-token = cookie["bili_jct"]
-#他妈的，aiohttp的cookie问题好大，只能手动设置cookie
-cookie_str = "".join([f"{k}={v};" for k, v in cookie.items()])
-msg = "开门！！"
 data = {
     "data": 0,
-    "msg": msg,
+    # "msg": msg,
     "color": "16777215",
     "fontsize": 25,
     "mode": 1,
     "rnd": 0,
-    "roomid": "3645373",
-    "csrf": token,
-    "csrf_token": token
+    # "roomid": "3645373",
+    # "csrf": token,
+    # "csrf_token": token
 }
-header["Cookie"] = cookie_str
-async def main():
-    async with aiohttp.ClientSession(headers=header) as session:
-        while True:
-            async with session.post(api, data=data) as resp:
-                print(await resp.text())
-            await asyncio.sleep(5)
+# token = cookie["bili_jct"]
+# 他妈的，aiohttp的cookie问题好大，只能手动设置cookie
+# cookie_str = "".join([f"{k}={v};" for k, v in cookie.items()])
+if __name__ == "__main__":
+    with open("cookie.txt") as f:
+        cookie = f.read()
+        matches = re.findall(r"bili_jct=([0-9 abcdef]+?);", cookie)
+        token = matches[0]
 
-asyncio.run(main())
-# r = requests.post(api, data=data, headers=header, cookies=cookie)
-# print(r.text)
+    msg = input("请输入弹幕内容：")
+    roomid = input("请输入房间号：")
+    header["Cookie"] = cookie
+    data["csrf"] = token
+    data["csrf_token"] = token
+    data["msg"] = msg
+    data["roomid"] = roomid
+
+    async def main():
+        async with aiohttp.ClientSession(headers=header) as session:
+            while True:
+                async with session.post(api, data=data) as resp:
+                    print(await resp.text())
+                await asyncio.sleep(5)
+
+    asyncio.run(main())
+    # r = requests.post(api, data=data, headers=header, cookies=cookie)
+    # print(r.text)
