@@ -25,7 +25,7 @@ class Danmaku():
     CONT_CMD = 0
     CONT_INFO = 3
 
-    # MSG_BUFFER = []
+    SENDMSG_BUFFER = []
     EVENT_BUFFER = []
     ROOMID_SEARCH_API = "https://api.live.bilibili.com/room/v1/Room/room_init"
     DANMAKU_INFO_API = "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo"
@@ -99,7 +99,7 @@ class Danmaku():
         async with aiohttp.ClientSession() as session:
             async with session.get(api, params={"id": str(room_id), "type": "0"}) as resp:
                 log.debug(
-                    f"Room {room_id}\nDanmakuStatus {resp.status}\nInfo\n----\n{await resp.text()}")
+                    f"Room {room_id}\nDanmakuStatus {resp.status}\nInfo\n-\n{await resp.text()}")
                 return await resp.json()
 
     async def get_roominfo(self, roomid):
@@ -107,7 +107,7 @@ class Danmaku():
         async with aiohttp.ClientSession() as session:
             async with session.get(api, params={"room_ids": str(roomid), "req_biz": "web_room_componet"}) as resp:
                 log.debug(
-                    f"Room {roomid}\nRoomStatus {resp.status}\nInfo\n----\n{await resp.text()}")
+                    f"Room {roomid}\nRoomStatus {resp.status}\nInfo\n-\n{await resp.text()}")
                 return await resp.json()
 
     def server_select(self):
@@ -146,20 +146,22 @@ class Danmaku():
         else:
             return None
 
-    # Message getter.
+    # Send Message getter.
 
-    # def get_message(self):
-    #     if len(self.MSG_BUFFER) > 0:
-    #         return self.MSG_BUFFER.pop(0)
-    #     else:
-    #         return None
+    def get_sendmsg(self):
+        if len(self.SENDMSG_BUFFER) > 0:
+            return self.SENDMSG_BUFFER.pop(0)
+        else:
+            return None
 
     # Set cookies. Set csrf_token at the same time.
     def set_cookie(self, cookie):
         if isinstance(cookie, str):
             self.cookie = cookie
             matches = re.findall(r"bili_jct=([0-9 abcdef]+?);", cookie)
-            self.token = matches[0]
+            self.csrf_token = matches[0]
+            self.header["Cookie"] = cookie
+            log.debug(f"Token set to {self.token}\nCookie set to {self.cookie}\nHeader set to {self.header}")
         else:
             raise TypeError("Cookie must be a string")
 
@@ -176,22 +178,11 @@ class Danmaku():
             raise FileNotFoundError("Cookie file not found")
 
     # Send message.
-    async def send(self, content):
-        api = self.DANMAKU_SEND_API
-        data = {
-            "data": 0,
-            "color": "16777215",
-            "fontsize": 25,
-            "mode": 1,
-            "rnd": 0
-        }
-        data["msg"] = content
-        data["csrf_token"] = self.csrf_token
-        data["csrf"] = self.csrf_token
-        data["roomid"] = self.real_roomid
-        async with aiohttp.ClientSession(headers=self.header) as session:
-            async with session.post(api, data=data) as resp:
-                print(await resp.text())
+    def send(self, content):
+        if isinstance(content, str):
+            self.SENDMSG_BUFFER.append(content)
+        else:
+            raise TypeError("Message must be a string")
 
     # Print handler which runs print functions that user defined.
     # Going to be discarded and merging into process handler.
@@ -213,6 +204,27 @@ class Danmaku():
                     self.__processor__[etype](event)
                 else:
                     self.__processor_not_impl__(event)
+            await asyncio.sleep(0)
+    
+    async def sendmsg_handler(self):
+        while True:
+            msg = self.get_sendmsg()
+            if msg:
+                api = self.DANMAKU_SEND_API
+                data = {
+                    "data": 0,
+                    "color": "16777215",
+                    "fontsize": 25,
+                    "mode": 1,
+                    "rnd": 0
+                }
+                data["msg"] = msg
+                data["csrf_token"] = self.csrf_token
+                data["csrf"] = self.csrf_token
+                data["roomid"] = self.real_roomid
+                async with aiohttp.ClientSession(headers=self.header) as session:
+                    async with session.post(api, data=data) as resp:
+                        log.debug(f"Send message \"{msg}\"\nStatus {resp.status}\nInfo\n-\n{await resp.text()}")
             await asyncio.sleep(0)
 
     # Interfaces
@@ -284,49 +296,51 @@ class Danmaku():
 
     # Main function
     # Initializes connection and start loops.
-    async def connect(self, roomid=None, server_autoselect=True):
-        if roomid:
-            self.roomid = roomid
-        elif self.roomid is None:
-            raise ValueError("Room ID not set")
+    def connect(self, roomid=None, server_autoselect=True):
+        async def conn():
+            if roomid:
+                self.roomid = roomid
+            elif self.roomid is None:
+                raise ValueError("Room ID not set")
 
-        self.real_roomid = await self.get_real_roomid(self.roomid)
-        self.server_info = await self.get_danmakuinfo(self.real_roomid)
-        self.room_info = (await self.get_roominfo(self.real_roomid))["data"]["by_room_ids"][str(self.real_roomid)]
-        self.token = self.server_info['data']['token']
-        self.server_list = self.server_info['data']['host_list']
-        if server_autoselect:
-            self.server = self.server_list[0]
-        else:
-            self.server = None
-        log.debug(f"Got token {self.token}")
-        log.debug(f"Got server {self.server_list}")
-        log.info(
-            f"Entering room {self.room_info['title']}\nUser {self.room_info['uname']}\nDescription {self.room_info['description']}\nRoomID {self.roomid}\nReal RoomID {self.real_roomid}")
-        async with aiohttp.ClientSession() as self.session:
-            log.debug(
-                f"Initialized Danmaku object for room {self.real_roomid}")
-            log.debug(
-                f"Connecting to server {self.server['host']}:{self.server['wss_port']}")
-            async with self.session.ws_connect(f"wss://{self.server['host']}:{self.server['wss_port']}/sub", headers=self.header, timeout=0) as ws:
-                log.debug(f"Connected")
-                subsc = json.dumps({
-                    "uid": 0,
-                    "roomid": self.real_roomid,
-                    "protover": 3,
-                    "platform": "web",
-                    "type": 2,
-                    "key": self.token
-                })
-                ws_header = self.header_gen(
-                    len(subsc), self.OP_USER_AUTH, self.DEFAULT_SEQ)
-                await ws.send_bytes(
-                    ws_header + subsc.encode("utf-8")
-                )
-                tasks = [
-                    self.loop(ws),
-                    self.heartbeat(ws),
-                    # self.print_handler(),
-                    self.process_handler()
-                ]
-                await asyncio.gather(*tasks)
+            self.real_roomid = await self.get_real_roomid(self.roomid)
+            self.server_info = await self.get_danmakuinfo(self.real_roomid)
+            self.room_info = (await self.get_roominfo(self.real_roomid))["data"]["by_room_ids"][str(self.real_roomid)]
+            self.token = self.server_info['data']['token']
+            self.server_list = self.server_info['data']['host_list']
+            if server_autoselect:
+                self.server = self.server_list[0]
+            else:
+                self.server = None
+            log.debug(f"Got token {self.token}")
+            log.debug(f"Got server {self.server_list}")
+            log.info(
+                f"Entering room {self.room_info['title']}\nUser {self.room_info['uname']}\nDescription {self.room_info['description']}\nRoomID {self.roomid}\nReal RoomID {self.real_roomid}")
+            async with aiohttp.ClientSession() as self.session:
+                log.debug(
+                    f"Initialized Danmaku object for room {self.real_roomid}")
+                log.debug(
+                    f"Connecting to server {self.server['host']}:{self.server['wss_port']}")
+                async with self.session.ws_connect(f"wss://{self.server['host']}:{self.server['wss_port']}/sub", headers=self.header, timeout=0) as ws:
+                    log.debug(f"Connected")
+                    subsc = json.dumps({
+                        "uid": 0,
+                        "roomid": self.real_roomid,
+                        "protover": 3,
+                        "platform": "web",
+                        "type": 2,
+                        "key": self.token
+                    })
+                    ws_header = self.header_gen(
+                        len(subsc), self.OP_USER_AUTH, self.DEFAULT_SEQ)
+                    await ws.send_bytes(
+                        ws_header + subsc.encode("utf-8")
+                    )
+                    tasks = [
+                        self.loop(ws),
+                        self.heartbeat(ws),
+                        self.sendmsg_handler(),
+                        self.process_handler()
+                    ]
+                    await asyncio.gather(*tasks)
+        asyncio.run(conn())
