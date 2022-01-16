@@ -1,8 +1,6 @@
 """
 Rewrite danmaku.py in Class
 """
-from curses import wrapper
-from http.cookiejar import Cookie
 import aiohttp
 import asyncio
 import json
@@ -11,6 +9,7 @@ import brotli
 import re
 import logging as log
 import functools
+import aioconsole
 
 
 class Danmaku():
@@ -24,6 +23,8 @@ class Danmaku():
     DEFAULT_SEQ = 1
     CONT_CMD = 0
     CONT_INFO = 3
+    MAX_MSGLEN = 20
+    
 
     SENDMSG_BUFFER = []
     EVENT_BUFFER = []
@@ -58,12 +59,16 @@ class Danmaku():
                       "ONLINE_RANK_COUNT",
                       "LIVE_INTERACTIVE_GAME",
                       "SEND_GIFT"]
+    update_delay= 0.1
+    send_delay = 3
+    heartbeat_delay = 30
 
-    def __processor_not_impl__(self): return NotImplementedError(
-        f"{self.__class__.__name__} is not implemented")
+    def __processor_not_impl__(self, *args): raise NotImplementedError(
+        f"{self.__processor_not_impl__.__name__} is not implemented")
     __processor__ = {}
+    __stdin__ = None
 
-    def __init__(self, roomid=None, ua=None, cookie=None) -> None:
+    def __init__(self, roomid=None, ua=None, cookie=None, stdin=None) -> None:
         if roomid:  # If roomid is given, set roomid
             self.roomid = roomid
             log.debug(f"Room ID set to {roomid}")
@@ -79,6 +84,9 @@ class Danmaku():
         else:
             self.cookie = ""
         log.debug(f"Cookie set to {self.cookie}")
+        if stdin:
+            self.__stdin__ = stdin
+            log.debug(f"Read from STDIN {self.__stdin__}")
 
     async def get_real_roomid(self, roomid):
         api = self.ROOMID_SEARCH_API
@@ -184,15 +192,6 @@ class Danmaku():
         else:
             raise TypeError("Message must be a string")
 
-    # Print handler which runs print functions that user defined.
-    # Going to be discarded and merging into process handler.
-    # async def print_handler(self):
-    #     while True:
-    #         msg = self.get_message()
-    #         # log.debug(f"Printing {msg}")
-    #         if msg:
-    #             self.__processor_msg__(msg)
-    #         await asyncio.sleep(0)
     # Event processing handler which runs event processing functions that user defined.
     async def process_handler(self):
         while True:
@@ -204,7 +203,19 @@ class Danmaku():
                     self.__processor__[etype](event)
                 else:
                     self.__processor_not_impl__(event)
-            await asyncio.sleep(0)
+            await asyncio.sleep(self.update_delay)
+
+    async def stdin_handler(self):
+        while True:
+            msg = (await self.__stdin__.readline()).strip()
+            # Split message into multiple messages.
+            if msg:
+                msglen = len(msg)
+                for i in range(0, msglen + self.MAX_MSGLEN, self.MAX_MSGLEN):
+                    msg_cut = msg[i:min(i + self.MAX_MSGLEN, msglen)]
+                    log.debug(f"Read from STDIN {msg_cut}")
+                    self.send(msg_cut.decode())
+            await asyncio.sleep(self.update_delay)
     
     async def sendmsg_handler(self):
         while True:
@@ -225,15 +236,9 @@ class Danmaku():
                 async with aiohttp.ClientSession(headers=self.header) as session:
                     async with session.post(api, data=data) as resp:
                         log.debug(f"Send message \"{msg}\"\nStatus {resp.status}\nInfo\n-\n{await resp.text()}")
-            await asyncio.sleep(0)
+            await asyncio.sleep(self.send_delay)
 
-    # Interfaces
-    # Wrapper of printer
-    # def printer(self, func):
-    #     @functools.wraps(func)
-    #     def wrapper(msg):
-    #         return func(msg)
-    #     self.__processor_msg__ = wrapper
+    # Interfaces for user to implement.
     # Wrapper of processor
     def processor(self, event_name):
         def wrapper_(func):
@@ -249,7 +254,6 @@ class Danmaku():
         return wrapper_
 
     # Heartbeat function
-
     async def heartbeat(self, ws):
         obj = "[object Object]"
         while True:
@@ -258,7 +262,7 @@ class Danmaku():
                 obj.encode("utf-8")
             )
             log.debug("Sent heartbeat")
-            await asyncio.sleep(30)
+            await asyncio.sleep(self.heartbeat_delay)
 
     # Main loop
     async def loop(self, ws):
@@ -298,6 +302,7 @@ class Danmaku():
     # Initializes connection and start loops.
     def connect(self, roomid=None, server_autoselect=True):
         async def conn():
+            self.__stdin__, _ = await aioconsole.get_standard_streams()
             if roomid:
                 self.roomid = roomid
             elif self.roomid is None:
@@ -340,7 +345,8 @@ class Danmaku():
                         self.loop(ws),
                         self.heartbeat(ws),
                         self.sendmsg_handler(),
-                        self.process_handler()
+                        self.process_handler(),
+                        self.stdin_handler()
                     ]
                     await asyncio.gather(*tasks)
         asyncio.run(conn())

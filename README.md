@@ -12,4 +12,4 @@ Libraries
 ## Run
 
 Install requirements `pip3 install -r requirements.txt`  
-Then run `python3 danmaku.py`
+Then run `python3 danmaku.py`  
