@@ -1,0 +1,13 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+livedanmaku/__init__.py
+livedanmaku/client.py
+livedanmaku/danmaku.py
+livedanmaku/monitor.py
+livedanmaku.egg-info/PKG-INFO
+livedanmaku.egg-info/SOURCES.txt
+livedanmaku.egg-info/dependency_links.txt
+livedanmaku.egg-info/requires.txt
+livedanmaku.egg-info/top_level.txt

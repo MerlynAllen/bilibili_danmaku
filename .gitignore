@@ -2,3 +2,5 @@ cookie.txt
 sample*
 test*
 __pycache__/
+samples/
+tests/

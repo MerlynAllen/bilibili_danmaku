@@ -1,12 +1,12 @@
 #! /usr/bin/python3
-import danmaku
+from livedanmaku import danmaku
 import logging as log
 import os, sys
 
 
-# LOGLEVEL = log.DEBUG
-# log.basicConfig(
-#     level=LOGLEVEL, format="[%(asctime)s (%(levelname)s) line %(lineno)d in %(funcName)s]\n%(message)s\n----")
+LOGLEVEL = log.DEBUG
+log.basicConfig(
+    level=LOGLEVEL, format="[%(asctime)s (%(levelname)s) line %(lineno)d in %(funcName)s]\n%(message)s\n----")
 
 client = danmaku.Danmaku()
 client.set_cookie_file("cookie.txt")

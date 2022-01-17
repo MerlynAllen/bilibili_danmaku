@@ -1,0 +1,5 @@
+aioconsole==0.3.3
+aiohttp==3.8.1
+brotli==1.0.9
+brotlipy==0.7.0
+requests==2.26.0

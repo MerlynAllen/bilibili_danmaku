@@ -1,7 +1,7 @@
 #! /usr/bin/python3
-import danmaku
+import livedanmaku
 
-client = danmaku.Danmaku(stdin=open("README.md"))
+client = livedanmaku.Danmaku()
 @client.processor("DANMU_MSG")
 def print_msg(msg):
     username = msg["info"][2][1]
@@ -19,4 +19,4 @@ def process_interact_word(event):
 def process_not_impl(event):
     pass
 
-client.connect(3278551)
+# client.connect()
