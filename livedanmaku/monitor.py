@@ -1,7 +1,7 @@
 #! /usr/bin/python3
-import livedanmaku
+from livedanmaku import danmaku
 
-client = livedanmaku.Danmaku()
+client = danmaku.Danmaku()
 @client.processor("DANMU_MSG")
 def print_msg(msg):
     username = msg["info"][2][1]
