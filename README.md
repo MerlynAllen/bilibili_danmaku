@@ -116,7 +116,7 @@ Bilibili live room danmaku transfers different types of messages distinguished b
 Sample dict data `event`
 
 ```json
-{'cmd': 'DANMU_MSG', 'info': [[0, 1, 25, 16777215, 1642377825835, 0, 0, 'c9f269af', 0, 0, 0, '', 0, '{}', '{}', {'mode': 0, 'show_player_type': 0, 'extra': '{"send_from_me":false,"mode":0,"color":16777215,"dm_type":0,"font_size":25,"player_mode":1,"show_player_type":0,"content":"didi","user_hash":"xxxx","emoticon_unique":"","direction":0,"pk_direction":0,"space_type":"","space_url":""}'}], 'didi', [34571330, 'xxxx', 0, 0, 0, 10000, 1, ''], [], [2, 0, 9868950, '>50000', 1], ['', ''], 0, 0, None, {'ts': 1642377825, 'ct': '1D32642E'}, 0, 0, None, None, 0, 210]}
+{"cmd": "DANMU_MSG", "info": [[0, 1, 25, 16777215, 1642377825835, 0, 0, "c9f269af", 0, 0, 0, "", 0, "{}", "{}", {"mode": 0, "show_player_type": 0, "extra": "{'send_from_me':false,'mode':0,'color':16777215,'dm_type':0,'font_size':25,'player_mode':1,'show_player_type':0,'content':'didi','user_hash':'xxxx','emoticon_unique':'','direction':0,'pk_direction':0,'space_type':'','space_url':''}"}], "didi", [34571330, "xxxx", 0, 0, 0, 10000, 1, ""], [], [2, 0, 9868950, ">50000", 1], ["", ""], 0, 0, "None", {"ts": 1642377825, "ct": "1D32642E"}, 0, 0, "None", "None", 0, 210]}
 ```
 
 `msg_type_name` specifies the implementation function when meets the value of key `cmd` in dict `event`.
