@@ -1,8 +1,11 @@
 """
 Rewrite danmaku.py in Class
 """
+from ast import arg
+from typing import List
 import aiohttp
 import asyncio
+import threading
 import json
 import struct
 import brotli
@@ -24,10 +27,10 @@ class Danmaku():
     CONT_CMD = 0
     CONT_INFO = 3
     MAX_MSGLEN = 20
-    
 
     SENDMSG_BUFFER = []
     EVENT_BUFFER = []
+    THREAD_HANDLER: threading.Thread = None
     ROOMID_SEARCH_API = "https://api.live.bilibili.com/room/v1/Room/room_init"
     DANMAKU_INFO_API = "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo"
     ROOM_INFO_API = "https://api.live.bilibili.com/xlive/web-room/v1/index/getRoomBaseInfo"
@@ -44,6 +47,7 @@ class Danmaku():
         "Upgrade": "websocket"
     }
     USER_AGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0"
+
     cookie = None
     header = None
     roomid = None
@@ -59,12 +63,12 @@ class Danmaku():
                       "ONLINE_RANK_COUNT",
                       "LIVE_INTERACTIVE_GAME",
                       "SEND_GIFT"]
-    update_delay= 0.1
+    update_delay = 0.1
     send_delay = 3
     heartbeat_delay = 30
 
-    def __processor_not_impl__(self, *args): raise NotImplementedError(
-        f"{self.__processor_not_impl__.__name__} is not implemented")
+    def __processor_no_impl__(self, *args): raise NotImplementedError(
+        f"{self.__processor_no_impl__.__name__} is not implemented")
     __processor__ = {}
     __stdin__ = None
 
@@ -169,7 +173,8 @@ class Danmaku():
             matches = re.findall(r"bili_jct=([0-9 abcdef]+?);", cookie)
             self.csrf_token = matches[0]
             self.header["Cookie"] = cookie
-            log.debug(f"Token set to {self.token}\nCookie set to {self.cookie}\nHeader set to {self.header}")
+            log.debug(
+                f"Token set to {self.token}\nCookie set to {self.cookie}\nHeader set to {self.header}")
         else:
             raise TypeError("Cookie must be a string")
 
@@ -202,7 +207,7 @@ class Danmaku():
                 if etype in self.__processor__.keys():
                     self.__processor__[etype](event)
                 else:
-                    self.__processor_not_impl__(event)
+                    self.__processor_no_impl__(event)
             await asyncio.sleep(self.update_delay)
 
     async def stdin_handler(self):
@@ -216,7 +221,7 @@ class Danmaku():
                     log.debug(f"Read from STDIN {msg_cut}")
                     self.send(msg_cut.decode())
             await asyncio.sleep(self.update_delay)
-    
+
     async def sendmsg_handler(self):
         while True:
             msg = self.get_sendmsg()
@@ -246,8 +251,8 @@ class Danmaku():
             def wrapper(event):
                 return func(event)
             # Registry user functions to different event handlers.
-            if event_name == "NOT_IMPL": 
-                self.__processor_not_impl__ = wrapper
+            if event_name == "NO_IMPL":
+                self.__processor_no_impl__ = wrapper
             else:
                 self.__processor__[event_name] = wrapper
             log.debug(f"Registered {event_name} event handler")
@@ -300,7 +305,7 @@ class Danmaku():
 
     # Main function
     # Initializes connection and start loops.
-    def connect(self, roomid=None, server_autoselect=True):
+    def __connect__(self, roomid=None, server_autoselect=True):
         async def conn():
             self.__stdin__, _ = await aioconsole.get_standard_streams()
             if roomid:
@@ -349,4 +354,14 @@ class Danmaku():
                         self.stdin_handler()
                     ]
                     await asyncio.gather(*tasks)
+        # asyncio.new_event_loop().run_until_complete(conn())
         asyncio.run(conn())
+        # asyncio.run(conn().to_thread(loop=asyncio.new_event_loop()))
+
+    def connect(self, roomid=None, server_autoselect=True):
+        self.THREAD_HANDLER = threading.Thread(
+            target=self.__connect__, args=(roomid, server_autoselect))
+        self.THREAD_HANDLER.start()
+
+    def wait(self):
+        self.THREAD_HANDLER.join()
