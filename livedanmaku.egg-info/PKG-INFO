@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: livedanmaku
-Version: 0.0.3
+Version: 0.0.4
 Summary: A python library for resolving Bilibili Danmaku with Flask-style API.
 Home-page: https://github.com/MerlynAllen/bilibili_danmaku/
 Author: Merlyn Allen
@@ -21,8 +21,8 @@ License-File: LICENSE
 A python library for resolving Bilibili Danmaku with Flask-style API. 
 
 一个提供Flask-style API的Bilibili直播弹幕协议解析器。
-
-
+[简体中文](https://github.com/MerlynAllen/bilibili_danmaku/blob/master/README_zh-CN.md/)
+[English](https://github.com/MerlynAllen/bilibili_danmaku/blob/master/README.md/)
 
 ## Installation
 
@@ -51,7 +51,7 @@ Libraries: `aiohttp` `brotli` `aioconsole`
 
 ## Usage
 
-### APIs
+### APIs at a glance
 
 A sample client will look like this:
 
@@ -83,18 +83,20 @@ def process_interact_word(event):
     print(f"\033[2K\r{username} entered live room", end="")
     client.send(f"@{username} welcome to live room!")
 
-@client.processor("NOT_IMPL")
-def process_not_impl(event):
+@client.processor("NO_IMPL")
+def process_no_impl(event):
     # write not implemeted type of data to log files.
     pass
 try:
     client.connect(12345)
+    #do some thing
+    client.wait()
 except KeyboardInterrupt:
     print("\rBye!")
     exit(0)
 ```
 
-### Initialize
+### Initializing
 
 Import and create `Danmaku` object
 
@@ -117,7 +119,7 @@ client.set_cookie_file("cookie.txt")
 
 Reads cookie from either string or file.
 
-### User Implementation Functions
+### APIs
 
 It provides a function decorator `processor` for user to implement. 
 
@@ -134,33 +136,36 @@ Bilibili live room danmaku transfers different types of messages distinguished b
 Sample dict data `event`
 
 ```json
-{'cmd': 'DANMU_MSG', 'info': [[0, 1, 25, 16777215, 1642377825835, 0, 0, 'c9f269af', 0, 0, 0, '', 0, '{}', '{}', {'mode': 0, 'show_player_type': 0, 'extra': '{"send_from_me":false,"mode":0,"color":16777215,"dm_type":0,"font_size":25,"player_mode":1,"show_player_type":0,"content":"didi","user_hash":"xxxx","emoticon_unique":"","direction":0,"pk_direction":0,"space_type":"","space_url":""}'}], 'didi', [34571330, 'xxxx', 0, 0, 0, 10000, 1, ''], [], [2, 0, 9868950, '>50000', 1], ['', ''], 0, 0, None, {'ts': 1642377825, 'ct': '1D32642E'}, 0, 0, None, None, 0, 210]}
+{"cmd": "DANMU_MSG", "info": [[0, 1, 25, 16777215, 1642377825835, 0, 0, "c9f269af", 0, 0, 0, "", 0, "{}", "{}", {"mode": 0, "show_player_type": 0, "extra": "{'send_from_me':false,'mode':0,'color':16777215,'dm_type':0,'font_size':25,'player_mode':1,'show_player_type':0,'content':'didi','user_hash':'xxxx','emoticon_unique':'','direction':0,'pk_direction':0,'space_type':'','space_url':''}"}], "didi", [34571330, "xxxx", 0, 0, 0, 10000, 1, ""], [], [2, 0, 9868950, ">50000", 1], ["", ""], 0, 0, "None", {"ts": 1642377825, "ct": "1D32642E"}, 0, 0, "None", "None", 0, 210]}
 ```
 
 `msg_type_name` specifies the implementation function when meets the value of key `cmd` in dict `event`.
 
-### No Implemetation
+### No Implemetation (I don't want to filter them!)
 
-Unimplemented types of message will raise `NotImplemetedError`. Redirect them to `NOT_IMPL`.
+Unimplemented types of message will raise `NotImplemetedError`. Redirect them to `NO_IMPL`.
 
 ```python
-@client.processor("NOT_IMPL")
+@client.processor("NO_IMPL")
 def func(e):
     # Write to logfile
     pass
 ```
 
-### Connect
+### Connecting
 
 Simply
 
 ```python
 client.connect(roomid)
+# do some thing
+client.wait()
 ```
 
-NOTICE: THIS WILL **BLOCK THE THREAD**!
+~~NOTICE: THIS WILL **BLOCK THE THREAD**!~~
 
-Please use `multitasking` if needed.
+~~Please use `multitasking` if needed.~~  
+Now this method will no longer be blocking anymore(`>=0.0.4`). Asynchronous code will run in a seperate thread.
 
 ### Sending Danmaku
 
