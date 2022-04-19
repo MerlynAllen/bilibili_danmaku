@@ -6,7 +6,7 @@ A python library for resolving Bilibili Danmaku with Flask-style API.
 [简体中文](https://github.com/MerlynAllen/bilibili_danmaku/blob/master/README_zh-CN.md/)
 [English](https://github.com/MerlynAllen/bilibili_danmaku/blob/master/README.md/)
 
-## Installation
+## 安装
 
 ### Git Clone
 
@@ -16,7 +16,7 @@ cd bilibili_danmaku
 pip3 install -r requirements.txt
 ```
 
-Then copy `livedanmaku` directory into your working directory.
+然后将`livedanmaku`目录复制到工作目录中。
 
 ### Pip
 
@@ -26,16 +26,14 @@ pip3 install livedanmaku
 
 
 
-## Requirements
+## 依赖
 
-Python Version >= 3.6  
-Libraries: `aiohttp` `brotli` `aioconsole`
+Python 版本 >= 3.6  
+Python库: `aiohttp` `brotli` `aioconsole`
 
 ## Usage
 
-### APIs at a glance
-
-A sample client will look like this:
+### 示例
 
 ```python
 #! /usr/bin/python3
@@ -78,9 +76,9 @@ except KeyboardInterrupt:
     exit(0)
 ```
 
-### Initializing
+### 创建对象
 
-Import and create `Danmaku` object
+导入 `Danmaku` object
 
 ```python
 from livedanmaku import danmaku
@@ -92,18 +90,18 @@ client = danmaku.Danmaku(
 )
 ```
 
-All parameters can be left unset. `cookie` and `roomid` can be set later by other functions. Default `ua` is  `User-Agent` of Firefox 96.0 on Linux (64-bits).
+参数都可以为空。默认值会自动填充。 `cookie` 和 `roomid` 可以在稍后设置。 默认的 `ua` 使用 Firefox 96.0 on Linux (64-bits)的User-Agent。
 
 ```python
 client.set_cookie("xxxxxxx")
 client.set_cookie_file("cookie.txt")
 ```
 
-Reads cookie from either string or file.
+可以从字符串或者文件中读取cookie。
 
-### APIs
+### API
 
-It provides a function decorator `processor` for user to implement. 
+提供了函数装饰器 `processor`以便用户实现。
 
 ```python
 @danmakuobject.processor(msg_type_name)
@@ -113,19 +111,21 @@ def func_name(event):
 
 
 
-Bilibili live room danmaku transfers different types of messages distinguished by values of key `cmd` in json data. The decorator does not process json data, but simply passes original `json.loads` loaded dict object to function for user to implement aiming to preserve more data details. 
+哔哩哔哩直播间弹幕通过json数据中键 `cmd` 的值来区分传输不同类型的消息。装饰器不处理json数据，只是将原始 `json.loads` 加载的 dict 对象传递给函数，供用户实现，旨在保留更多数据细节。
 
-Sample dict data `event`
+示例 `event`字典值
 
 ```json
 {"cmd": "DANMU_MSG", "info": [[0, 1, 25, 16777215, 1642377825835, 0, 0, "c9f269af", 0, 0, 0, "", 0, "{}", "{}", {"mode": 0, "show_player_type": 0, "extra": "{'send_from_me':false,'mode':0,'color':16777215,'dm_type':0,'font_size':25,'player_mode':1,'show_player_type':0,'content':'didi','user_hash':'xxxx','emoticon_unique':'','direction':0,'pk_direction':0,'space_type':'','space_url':''}"}], "didi", [34571330, "xxxx", 0, 0, 0, 10000, 1, ""], [], [2, 0, 9868950, ">50000", 1], ["", ""], 0, 0, "None", {"ts": 1642377825, "ct": "1D32642E"}, 0, 0, "None", "None", 0, 210]}
 ```
 
-`msg_type_name` specifies the implementation function when meets the value of key `cmd` in dict `event`.
+`msg_type_name` 指定了字典`cmd`键所对应的值。装饰器将会把函数注册为对应键值对应的处理函数。当遇到指定的`cmd`值时将会调用该方法。
+典型的消息类型在`Danmaku.TYPICAL_EVENTS`中定义。
 
-### No Implemetation (I don't want to filter them!)
+### 不对消息分流
 
-Unimplemented types of message will raise `NotImplemetedError`. Redirect them to `NO_IMPL`.
+未实现处理函数的消息类型将会默认raise一个`NotImplementedError`.  
+`NO_IMPL`是为这种情况设计的内置消息类型。当实现该类型消息时，所有未实现的消息类型都会重定向到此函数中（即定义默认行为）。可以只实现该类型以对所有消息均不分流。也可以在此处添加logging记录未实现的类型消息，方便后期改添加函数。
 
 ```python
 @client.processor("NO_IMPL")
@@ -134,9 +134,9 @@ def func(e):
     pass
 ```
 
-### Connecting
+### 连接
 
-Simply
+只需要
 
 ```python
 client.connect(roomid)
@@ -144,22 +144,23 @@ client.connect(roomid)
 client.wait()
 ```
 
-~~NOTICE: THIS WILL **BLOCK THE THREAD**!~~
+~~注: 这将**阻塞线程**!~~
 
-~~Please use `multitasking` if needed.~~  
-Now this method will no longer be blocking anymore(`>=0.0.4`). Asynchronous code will run in a seperate thread.
+~~如果不想被`connect()`阻塞，请使用`threading`模块~~  
+现在该方法不再会阻塞线程了(`>=0.0.4`).  
+会使用独立的线程调用异步代码。
 
-### Sending Danmaku
+### 发送弹幕
 
 ```
 client.send(string_message)
 ```
 
-Can be used in processor functions.
+可以在任何位置调用。包括处理器函数中。此方法将会把消息送进缓冲区，等待消息发送协程发送。消息发送协程的发送间歇为`3s`。可以在`Danmaku.send_delay`中修改。
 
-Standard input stream is read as manual input or file input and automatically send from `stdin`.(Asynchronous IO)
+标准输入流可以作为手动输入的消息的源（异步IO）。如果设置`stdin`为`None`将会禁用这一行为。
 
-### Enabling Logging
+### 开启日志
 
 ```python
 import logging as log

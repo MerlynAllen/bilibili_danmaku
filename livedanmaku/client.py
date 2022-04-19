@@ -1,7 +1,8 @@
 #! /usr/bin/python3
 from livedanmaku import danmaku
 import logging as log
-import os, sys
+import os
+import sys
 
 
 LOGLEVEL = log.DEBUG
@@ -11,6 +12,7 @@ log.basicConfig(
 client = danmaku.Danmaku()
 client.set_cookie_file("cookie.txt")
 
+
 @client.processor("DANMU_MSG")
 def print_msg(msg):
     username = msg["info"][2][1]
@@ -18,7 +20,8 @@ def print_msg(msg):
     print(f"\033[2K\r[\x1b[34m{username}\x1b[39m]: {content}")
     if content == "哈喽":
         client.send(f"@{username} qwq")
-    # os.system(f"notify-send '[{username}]说:' '{content}' --app-name='Bilibili Danmaku Room {client.roomid}' -t 3000") 
+    # os.system(f"notify-send '[{username}]说:' '{content}' --app-name='Bilibili Danmaku Room {client.roomid}' -t 3000")
+
 
 @client.processor("INTERACT_WORD")
 def process_interact_word(event):
@@ -26,12 +29,17 @@ def process_interact_word(event):
     print(f"\033[2K\r{username} 进入了直播间。", end="")
     client.send(f"@{username} 欢迎进入直播间!")
 
-@client.processor("NOT_IMPL")
-def process_not_impl(event):
-    #可以加Logfile， 以便记录未实现的事件
+
+@client.processor("NO_IMPL")
+def process_no_impl(event):
+    # 可以加Logfile， 以便记录未实现的事件
     pass
+
+
 try:
-    client.connect(3278551)
+    client.connect(12345)
+    # do some thing
+    client.wait()
 except KeyboardInterrupt:
     print("\rBye!")
-    sys.exit(0)
+    exit(0)

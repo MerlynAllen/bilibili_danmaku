@@ -20,7 +20,7 @@ def process_interact_word(event):
 
 
 @client.processor("NO_IMPL")
-def process_not_impl(event):
+def process_no_impl(event):
     pass
 
 
