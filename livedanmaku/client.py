@@ -12,9 +12,9 @@ else:
     cookie_path=sys.argv[2]
 
 
-LOGLEVEL = log.DEBUG
-log.basicConfig(
-    level=LOGLEVEL, format="[%(asctime)s (%(levelname)s) line %(lineno)d in %(funcName)s]\n%(message)s\n----")
+# LOGLEVEL = log.DEBUG
+# log.basicConfig(
+#     level=LOGLEVEL, format="[%(asctime)s (%(levelname)s) line %(lineno)d in %(funcName)s]\n%(message)s\n----")
 
 client = danmaku.Danmaku()
 
