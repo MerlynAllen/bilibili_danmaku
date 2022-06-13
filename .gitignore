@@ -5,3 +5,7 @@ __pycache__/
 samples/
 tests/
 dist/
+livedanmaku.egg-info/
+/livedanmaku.egg-info
+/dist
+/livedanmaku/__pycache__

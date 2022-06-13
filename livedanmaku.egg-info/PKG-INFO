@@ -1,14 +1,12 @@
 Metadata-Version: 2.1
 Name: livedanmaku
-Version: 0.0.4
+Version: 0.0.5
 Summary: A python library for resolving Bilibili Danmaku with Flask-style API.
 Home-page: https://github.com/MerlynAllen/bilibili_danmaku/
 Author: Merlyn Allen
 Author-email: xiaorui2001@outlook.com
-License: UNKNOWN
 Project-URL: Bug Tracker, https://github.com/MerlynAllen/bilibili_danmaku/issues
 Project-URL: Source Code, https://github.com/MerlynAllen/bilibili_danmaku/
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
@@ -184,5 +182,3 @@ import logging as log
 LOGLEVEL = log.DEBUG
 log.basicConfig(level=LOGLEVEL, format="[%(asctime)s (%(levelname)s) line %(lineno)d in %(funcName)s]\n%(message)s\n----")
 ```
-
-
