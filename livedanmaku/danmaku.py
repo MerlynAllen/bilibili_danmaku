@@ -185,8 +185,8 @@ class Danmaku():
         else:
             raise TypeError("Cookie file path must be a string")
         try:
-            with open("cookie.txt", "r") as f:
-                self.set_cookie(f.read())
+            with open(cookie_file, "r") as f:
+                self.set_cookie(f.read().strip())
         except:
             raise FileNotFoundError("Cookie file not found")
 

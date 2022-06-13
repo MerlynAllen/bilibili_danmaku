@@ -4,13 +4,19 @@ import logging as log
 import os
 import sys
 
+if len(sys.argv) < 3:
+    print("Usage: python -m livedanmaku.client <roomid> <cookie_path>")
+    exit(0)
+else:
+    roomid=sys.argv[1]
+    cookie_path=sys.argv[2]
+
 
 LOGLEVEL = log.DEBUG
 log.basicConfig(
     level=LOGLEVEL, format="[%(asctime)s (%(levelname)s) line %(lineno)d in %(funcName)s]\n%(message)s\n----")
 
 client = danmaku.Danmaku()
-client.set_cookie_file("cookie.txt")
 
 
 @client.processor("DANMU_MSG")
@@ -37,7 +43,8 @@ def process_no_impl(event):
 
 
 try:
-    client.connect(12345)
+    client.set_cookie_file(cookie_path)
+    client.connect(roomid)
     # do some thing
     client.wait()
 except KeyboardInterrupt:

@@ -1,6 +1,12 @@
 #! /usr/bin/python3
 from livedanmaku import danmaku
+import sys
 
+if len(sys.argv) < 2:
+    print("No room number designated.")
+    exit(0)
+else:
+    roomid=sys.argv[1]
 client = danmaku.Danmaku()
 
 
@@ -24,7 +30,7 @@ def process_no_impl(event):
     pass
 
 
-client.connect()
+client.connect(roomid)
 # some code
 
 client.wait()
